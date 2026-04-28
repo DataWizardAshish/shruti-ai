@@ -15,6 +15,10 @@ class Question {
   final int engagementScore;
   final bool isDailyInsight;
   final DateTime? approvedAt;
+  final String? sceneSetup;
+  final String? narrativeContinuation;
+  final String? deepContext;
+  final String? forwardHook;
 
   const Question({
     required this.id,
@@ -33,6 +37,10 @@ class Question {
     required this.engagementScore,
     required this.isDailyInsight,
     this.approvedAt,
+    this.sceneSetup,
+    this.narrativeContinuation,
+    this.deepContext,
+    this.forwardHook,
   });
 
   factory Question.fromJson(Map<String, dynamic> json) => Question(
@@ -54,6 +62,10 @@ class Question {
         approvedAt: json['approved_at'] != null
             ? DateTime.tryParse(json['approved_at'] as String)
             : null,
+        sceneSetup: json['scene_setup'] as String?,
+        narrativeContinuation: json['narrative_continuation'] as String?,
+        deepContext: json['deep_context'] as String?,
+        forwardHook: json['forward_hook'] as String?,
       );
 
   static bool _parseBool(dynamic v) {
@@ -63,6 +75,30 @@ class Question {
     if (v is String) return v == '1' || v.toLowerCase() == 'true';
     return false;
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'question': question,
+        'option_a': optionA,
+        'option_b': optionB,
+        'option_c': optionC,
+        'option_d': optionD,
+        'correct_answer': correctAnswer,
+        'explanation': explanation,
+        'difficulty': difficulty,
+        'topic': topic,
+        'story_phase': storyPhase,
+        'narrative_arc': narrativeArc,
+        'chapter_title': chapterTitle,
+        'engagement_score': engagementScore,
+        'is_daily_insight': isDailyInsight,
+        if (approvedAt != null) 'approved_at': approvedAt!.toIso8601String(),
+        if (sceneSetup != null) 'scene_setup': sceneSetup,
+        if (narrativeContinuation != null)
+          'narrative_continuation': narrativeContinuation,
+        if (deepContext != null) 'deep_context': deepContext,
+        if (forwardHook != null) 'forward_hook': forwardHook,
+      };
 
   Map<String, String> get options => {
         'A': optionA,

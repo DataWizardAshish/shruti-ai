@@ -23,7 +23,7 @@ class OptionTile extends StatelessWidget {
       OptionState.idle => (AppColors.white, AppColors.sandalwood, AppColors.charcoal, null),
       OptionState.selected => (AppColors.saffron.withValues(alpha: 0.1), AppColors.saffron, AppColors.saffron, null),
       OptionState.correct => (AppColors.gold.withValues(alpha: 0.15), AppColors.gold, AppColors.charcoal, Icons.check_circle),
-      OptionState.wrong => (Colors.grey.shade100, Colors.grey.shade400, Colors.grey.shade500, Icons.cancel),
+      OptionState.wrong => (AppColors.templeRed.withValues(alpha: 0.08), AppColors.templeRed.withValues(alpha: 0.55), AppColors.templeRed, Icons.cancel_outlined),
     };
 
     return GestureDetector(

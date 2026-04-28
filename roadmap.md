@@ -8,10 +8,12 @@
 **Goal:** Runnable Flutter skeleton + API connected
 
 - [x] Flutter project init with suggested repo structure
-- [x] `pubspec.yaml` — add Riverpod, http, shared_preferences, google_fonts
-- [x] `app_theme.dart` — palette, Cinzel + Inter fonts, parchment texture
-- [x] `question.dart` model — full JSON data model
-- [x] `api_service.dart` — GET /questions, /questions/daily-insight, /questions/{id}
+- [x] `pubspec.yaml` — add Riverpod, http, shared_preferences, google_fonts, share_plus, uuid
+- [x] `app_theme.dart` — palette, Cinzel + Inter fonts, parchment texture + `EpicTheme` (Ramayana/Mahabharata)
+- [x] `question.dart` model — full JSON data model (+ sceneSetup, narrativeContinuation, deepContext, forwardHook fields)
+- [x] `api_service.dart` — GET /questions, /questions/daily-insight, /questions/{id} + 9 new endpoints (home, episodes, journey, saved questions, daily shloka)
+- [x] `progress_service.dart` — streak, phase progress + `getOrCreateDeviceId()` via uuid
+- [x] `epic_provider.dart` — `currentEpicProvider: StateProvider<EpicTheme>` infrastructure
 - [ ] FastAPI backend running on localhost:8000 with SQLite
 - [ ] Hot reload working end-to-end (app → API → DB)
 
@@ -19,6 +21,14 @@
 
 ## Phase 1 — Core Screens (v1 Ship Target)
 **Goal:** Full user flow functional, no auth, local progress
+
+### Entry Experience
+- [x] `LandingScreen` — atmospheric SHRUTI splash, staggered animations, float chevron
+- [x] `EpicSelectionScreen` — diagonal left/right split (Ramayana warm / Mahabharata cool), both halves visible simultaneously, full-half tap targets, diagonal divider with diamond ornament, wheel rotation animation
+- [x] `MahabharataComingSoonScreen` — atmospheric header with large "महाभारत" Devanagari, stanza text (no cards/borders), pulsing dots
+- [x] Navigation flow: Landing → EpicSelection → MainShell (or Onboarding on first launch) / Mahabharata Coming Soon
+- [x] `painters/bow_painter.dart` — elegant bow + string CustomPainter
+- [x] `painters/wheel_painter.dart` — 16-spoke dharma chakra CustomPainter
 
 ### Onboarding
 - [x] 3-slide onboarding (first launch only)
@@ -30,7 +40,8 @@
 - [x] Parchment background + shloka watermark (6-8% opacity)
 - [x] "Today's Quest" card — daily insight question from `/questions/daily-insight`
 - [x] Greeting text ("Begin your journey…")
-- [x] Bottom nav: Home | Quiz | Journey | Explore
+- [x] Bottom nav: Home | Quiz | Journey | Explore | Saved (5 tabs)
+- [x] `MainShell` extracted to own file — `◀ EPICS` back chip top-right
 
 ### Quiz Screen
 - [x] Full-screen question card (Cinzel heading, Inter options)
@@ -54,10 +65,17 @@
 - [x] Question card: chapter title + difficulty badge + story phase tag
 - [x] Tap → study mode (full Q+A, no quiz flow)
 
+### Saved Wisdom Screen (5th tab)
+- [x] `SavedWisdomScreen` — bookmark, list, detail flow
+- [x] `SavedQuestionDetailScreen` — full question detail + share via share_plus
+- [x] `saved_questions_provider.dart` — StateNotifier with optimistic UI
+- [x] `save_wisdom_button.dart` — animated bookmark icon widget
+
 ### Progress Persistence
 - [x] `progress_service.dart` — read/write answered question IDs
 - [x] Streak tracking (days in a row)
 - [x] Story phase completion percentages
+- [x] Device ID generation (uuid v4, persisted)
 
 ---
 
@@ -117,4 +135,4 @@
 
 ---
 
-*Last updated: 2026-04-23*
+*Last updated: 2026-04-27*

@@ -1,365 +1,276 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../providers/providers.dart';
-import '../models/question.dart';
+import '../models/phase_story.dart';
 import '../theme/app_theme.dart';
-import 'quiz_screen.dart';
+import 'phase_story_screen.dart';
 
-class ExploreScreen extends ConsumerStatefulWidget {
+class ExploreScreen extends ConsumerWidget {
   const ExploreScreen({super.key});
 
   @override
-  ConsumerState<ExploreScreen> createState() => _ExploreScreenState();
-}
-
-class _ExploreScreenState extends ConsumerState<ExploreScreen> {
-  String? _selectedPhase;
-  String? _selectedDifficulty;
-
-  @override
-  Widget build(BuildContext context) {
-    final questionsAsync = ref.watch(allQuestionsProvider);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final phasesAsync = ref.watch(phasesProvider);
 
     return Scaffold(
       backgroundColor: AppColors.parchment,
-      appBar: AppBar(title: const Text('Explore')),
-      body: Column(
+      body: Stack(
         children: [
-          _FilterBar(
-            selectedPhase: _selectedPhase,
-            selectedDifficulty: _selectedDifficulty,
-            onPhaseChanged: (p) => setState(() => _selectedPhase = p),
-            onDifficultyChanged: (d) => setState(() => _selectedDifficulty = d),
-          ),
-          Expanded(
-            child: questionsAsync.when(
-              loading: () => const Center(
-                child: CircularProgressIndicator(color: AppColors.saffron),
-              ),
-              error: (e, _) => _ErrorState(message: e.toString()),
-              data: (questions) {
-                final filtered = questions.where((q) {
-                  if (_selectedPhase != null && q.storyPhase != _selectedPhase) return false;
-                  if (_selectedDifficulty != null && q.difficulty != _selectedDifficulty) return false;
-                  return true;
-                }).toList();
-
-                if (filtered.isEmpty) {
-                  return const Center(
-                    child: Text('No questions match filters'),
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, i) => _QuestionCard(question: filtered[i]),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FilterBar extends StatelessWidget {
-  const _FilterBar({
-    required this.selectedPhase,
-    required this.selectedDifficulty,
-    required this.onPhaseChanged,
-    required this.onDifficultyChanged,
-  });
-
-  final String? selectedPhase;
-  final String? selectedDifficulty;
-  final void Function(String?) onPhaseChanged;
-  final void Function(String?) onDifficultyChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      decoration: BoxDecoration(
-        color: AppColors.parchment,
-        border: Border(bottom: BorderSide(color: AppColors.sandalwood.withValues(alpha: 0.3))),
-      ),
-      child: Column(
-        children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _FilterChip(
-                  label: 'All phases',
-                  selected: selectedPhase == null,
-                  onTap: () => onPhaseChanged(null),
-                ),
-                ...storyPhases.where((p) => p != 'Other').map(
-                      (p) => _FilterChip(
-                        label: p,
-                        selected: selectedPhase == p,
-                        onTap: () => onPhaseChanged(selectedPhase == p ? null : p),
+          _ParchmentBg(),
+          SafeArea(
+            child: CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 4),
+                    child: Text(
+                      'THE STORY',
+                      style: GoogleFonts.cinzel(
+                        fontSize: 12,
+                        color: AppColors.sandalwood,
+                        letterSpacing: 2,
                       ),
                     ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+                    child: Text(
+                      'Explore the Epic',
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            color: AppColors.templeRed,
+                          ),
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                    child: Text(
+                      'Read the story of each chapter, then test your knowledge.',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: AppColors.sandalwood,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                ),
+                phasesAsync.when(
+                  data: (phases) => SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, i) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _PhaseCard(
+                            phase: phases[i],
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => PhaseStoryScreen(
+                                  storyPhase: phases[i].storyPhase,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        childCount: phases.length,
+                      ),
+                    ),
+                  ),
+                  loading: () => const SliverFillRemaining(
+                    child: Center(
+                      child: CircularProgressIndicator(color: AppColors.saffron),
+                    ),
+                  ),
+                  error: (e, st) => _FallbackPhaseList(),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 32)),
               ],
             ),
           ),
-          const SizedBox(height: 6),
-          Row(
-            children: ['easy', 'medium', 'hard'].map((d) {
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: _FilterChip(
-                  label: d,
-                  selected: selectedDifficulty == d,
-                  onTap: () => onDifficultyChanged(selectedDifficulty == d ? null : d),
-                  color: switch (d) {
-                    'easy' => Colors.green,
-                    'medium' => AppColors.saffron,
-                    _ => AppColors.templeRed,
-                  },
-                ),
-              );
-            }).toList(),
-          ),
         ],
       ),
     );
   }
 }
 
-class _FilterChip extends StatelessWidget {
-  const _FilterChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.color,
-  });
-
-  final String label;
-  final bool selected;
+class _PhaseCard extends StatelessWidget {
+  const _PhaseCard({required this.phase, required this.onTap});
+  final PhaseSummary phase;
   final VoidCallback onTap;
-  final Color? color;
 
   @override
   Widget build(BuildContext context) {
-    final c = color ?? AppColors.saffron;
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: selected ? c.withValues(alpha: 0.15) : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: selected ? c : AppColors.sandalwood.withValues(alpha: 0.5)),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: selected ? c : AppColors.sandalwood,
-            fontSize: 12,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _QuestionCard extends StatefulWidget {
-  const _QuestionCard({required this.question});
-  final Question question;
-
-  @override
-  State<_QuestionCard> createState() => _QuestionCardState();
-}
-
-class _QuestionCardState extends State<_QuestionCard> {
-  bool _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final q = widget.question;
-    final diffColor = switch (q.difficulty) {
-      'easy' => Colors.green,
-      'medium' => AppColors.saffron,
-      _ => AppColors.templeRed,
-    };
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.sandalwood.withValues(alpha: 0.25)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          InkWell(
-            onTap: () => setState(() => _expanded = !_expanded),
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: diffColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: diffColor.withValues(alpha: 0.4)),
-                        ),
-                        child: Text(
-                          q.difficulty,
-                          style: TextStyle(color: diffColor, fontSize: 10, fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          q.storyPhase,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppColors.sandalwood,
-                              ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (q.isDailyInsight)
-                        const Icon(Icons.star, color: AppColors.gold, size: 16),
-                      Icon(
-                        _expanded ? Icons.expand_less : Icons.expand_more,
-                        color: AppColors.sandalwood,
-                        size: 20,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    q.question,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.charcoal,
-                          height: 1.4,
-                        ),
-                    maxLines: _expanded ? null : 2,
-                    overflow: _expanded ? null : TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (_expanded) ...[
-            Divider(height: 1, color: AppColors.sandalwood.withValues(alpha: 0.2)),
-            Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ...q.options.entries.map(
-                    (e) => Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 22,
-                            height: 22,
-                            margin: const EdgeInsets.only(right: 8, top: 1),
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: e.key == q.correctAnswer
-                                  ? AppColors.gold.withValues(alpha: 0.2)
-                                  : Colors.transparent,
-                              border: Border.all(
-                                color: e.key == q.correctAnswer
-                                    ? AppColors.gold
-                                    : AppColors.sandalwood.withValues(alpha: 0.5),
-                              ),
-                            ),
-                            child: Text(
-                              e.key,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: e.key == q.correctAnswer ? AppColors.gold : AppColors.sandalwood,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              e.value,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: e.key == q.correctAnswer
-                                        ? AppColors.charcoal
-                                        : AppColors.sandalwood,
-                                    fontWeight: e.key == q.correctAnswer
-                                        ? FontWeight.w600
-                                        : FontWeight.normal,
-                                  ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppColors.parchment,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      q.explanation,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.charcoal,
-                            height: 1.5,
-                          ),
-                    ),
-                  ),
-                ],
-              ),
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.sandalwood.withValues(alpha: 0.25)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.sandalwood.withValues(alpha: 0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
-        ],
-      ),
-    );
-  }
-}
-
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message});
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
+        ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.wifi_off, size: 48, color: AppColors.sandalwood),
-            const SizedBox(height: 12),
-            Text(
-              'Could not load questions',
-              style: Theme.of(context).textTheme.titleMedium,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    phase.title.isNotEmpty ? phase.title : phase.storyPhase,
+                    style: GoogleFonts.cinzel(
+                      fontSize: 15,
+                      color: AppColors.templeRed,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const Icon(Icons.chevron_right, color: AppColors.sandalwood),
+              ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
-              'Backend must be running on localhost:8000',
-              style: Theme.of(context).textTheme.bodySmall,
-              textAlign: TextAlign.center,
+              phase.storyPhase,
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                color: AppColors.sandalwood,
+                letterSpacing: 0.3,
+              ),
             ),
+            if (phase.mood.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                phase.mood,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: AppColors.sandalwood,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+            if (phase.keyCharacters.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 6,
+                children: phase.keyCharacters.take(4).map((c) => _MiniChip(label: c)).toList(),
+              ),
+            ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MiniChip extends StatelessWidget {
+  const _MiniChip({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.parchment,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.sandalwood.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.inter(fontSize: 11, color: AppColors.sandalwood),
+      ),
+    );
+  }
+}
+
+// Fallback: show static phase list when backend /phases not available yet
+class _FallbackPhaseList extends StatelessWidget {
+  static const _phases = [
+    'Early Life of Rama',
+    'Exile Phase',
+    'Sita Haran',
+    'Search for Sita',
+    'Lanka War',
+    'Return and Reunion',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, i) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: InkWell(
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => PhaseStoryScreen(storyPhase: _phases[i]),
+                ),
+              ),
+              borderRadius: BorderRadius.circular(14),
+              child: Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                      color: AppColors.sandalwood.withValues(alpha: 0.25)),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _phases[i],
+                        style: GoogleFonts.cinzel(
+                          fontSize: 15,
+                          color: AppColors.templeRed,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, color: AppColors.sandalwood),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          childCount: _phases.length,
+        ),
+      ),
+    );
+  }
+}
+
+class _ParchmentBg extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(color: AppColors.parchment),
+      child: Opacity(
+        opacity: 0.06,
+        child: Center(
+          child: Text(
+            'रामो विग्रहवान् धर्मः',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 32,
+              fontFamily: 'serif',
+              color: AppColors.templeRed,
+              letterSpacing: 2,
+            ),
+          ),
         ),
       ),
     );

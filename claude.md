@@ -87,13 +87,44 @@ GET /questions/{id}
 
 ---
 
+## App Entry Flow
+
+```
+LandingScreen (cold launch always)
+  → tap "BEGIN YOUR JOURNEY"
+  → EpicSelectionScreen (diagonal split, both epics visible)
+      left half tap → SharedPrefs check onboarding_complete
+          → false: OnboardingScreen → MainShell
+          → true:  MainShell (5-tab nav)
+      right half tap → MahabharataComingSoonScreen
+```
+
 ## Screen Specs
+
+### 0. Landing Screen (`landing_screen.dart`)
+- Dark warm bg (`#1C1208`) + center radial glow
+- SHRUTI title (Cinzel 48sp) + श्रुति + tagline
+- "BEGIN YOUR JOURNEY" text CTA + floating chevron
+- Staggered fade-in animations (800ms total)
+
+### 0b. Epic Selection Screen (`epic_selection_screen.dart`)
+- Diagonal `ClipPath` split — left (Ramayana warm) / right (Mahabharata cool)
+- Both halves fully visible simultaneously; full-half tap targets
+- Thin diagonal gold divider line with diamond ornament at midpoint
+- Mahabharata half: slow-rotating dharma wheel (60s/rotation), "COMING SOON" label
+- Header "Where does your journey begin?" spans both; SHRUTI wordmark at bottom
+
+### 0c. Mahabharata Coming Soon (`mahabharata_coming_soon_screen.dart`)
+- Atmospheric header: dark navy, radial indigo glow, large "महाभारत" (56sp gold)
+- Three stanza sections: BEFORE THE WAR / THE WAR / COMING TO SHRUTI
+- No cards, no borders — text directly on dark bg, line-height 1.8
+- Pulsing gold dots at bottom
 
 ### 1. Home Screen
 - "Today's Quest" card — shows Daily Insight question
 - Greeting: "Begin your journey, [name]" or "What do you seek today?"
 - Background: parchment + faint shloka watermark
-- Bottom nav: Home | Quiz | Journey | Explore
+- Bottom nav: Home | Quiz | Journey | Explore | Saved
 
 ### 2. Quiz Screen
 - Full-screen question card
@@ -115,7 +146,12 @@ GET /questions/{id}
 - Card per question: chapter title, difficulty badge, story phase tag
 - Tap to read full Q+A (study mode)
 
-### 5. Onboarding (first launch)
+### 5. Saved Wisdom Screen (5th tab)
+- Bookmarked questions list
+- Detail view with full explanation + share action
+- Bookmark/unbookmark with optimistic UI
+
+### 6. Onboarding (first launch)
 - 3 slides: What is this? → How it works → Begin
 - Rama-Sita illustration on slide 1
 - Minimal, no account required (local progress storage for v1)
@@ -175,35 +211,61 @@ Use `is_daily_insight` questions prominently (daily card, featured sections).
 
 ---
 
-## Repo Structure (suggested)
+## Repo Structure (actual)
 
 ```
-epic_quiz_app/
-  lib/
-    main.dart
-    screens/
-      home_screen.dart
-      quiz_screen.dart
-      journey_screen.dart
-      explore_screen.dart
-    widgets/
-      question_card.dart
-      option_tile.dart
-      phase_map.dart
-    services/
-      api_service.dart       ← HTTP calls to FastAPI
-      progress_service.dart  ← local SharedPreferences
-    models/
-      question.dart
-    theme/
-      app_theme.dart         ← colors, fonts, textures
-  assets/
-    fonts/
-    images/
-      rama_sita.png
-      parchment_texture.png
-  pubspec.yaml
-  CLAUDE.md  ← this file
+app/lib/
+  main.dart                          ← entry: LandingScreen
+  painters/
+    bow_painter.dart                 ← elegant bow CustomPainter
+    wheel_painter.dart               ← 16-spoke dharma chakra CustomPainter
+  screens/
+    landing_screen.dart              ← cold launch splash
+    epic_selection_screen.dart       ← diagonal split, epic choice
+    main_shell.dart                  ← 5-tab shell + ◀ EPICS chip
+    home_screen.dart
+    quiz_screen.dart
+    journey_screen.dart
+    explore_screen.dart
+    phase_selector_screen.dart
+    phase_story_screen.dart
+    episode_list_screen.dart
+    saved_wisdom_screen.dart         ← 5th tab
+    saved_question_detail_screen.dart
+    mahabharata_coming_soon_screen.dart
+  widgets/
+    option_tile.dart
+    daily_insight_card.dart
+    daily_shloka_card.dart
+    continue_journey_card.dart
+    recent_wisdom_strip.dart
+    save_wisdom_button.dart
+    episode_opening_card.dart
+    episode_closing_card.dart
+    narrative_path_widget.dart
+    weekly_summary_widget.dart
+  models/
+    question.dart
+    episode.dart
+    saved_question.dart
+    daily_shloka.dart
+    journey_data.dart
+    home_data.dart
+  providers/
+    providers.dart
+    epic_provider.dart               ← currentEpicProvider: StateProvider<EpicTheme>
+    home_data_provider.dart
+    journey_provider.dart
+    episode_flow_provider.dart
+    saved_questions_provider.dart
+  services/
+    api_service.dart
+    progress_service.dart
+  theme/
+    app_theme.dart                   ← palette + EpicTheme (ramayana/mahabharata)
+assets/
+  images/
+pubspec.yaml
 ```
 
 ---
@@ -218,3 +280,7 @@ epic_quiz_app/
 | Auth | None (v1) | Ship fast, local progress only |
 | Repo | Separate from admin tool | Different deploy targets, different tech |
 | Content source | Admin tool DB via API | Human-reviewed, quality pipeline |
+| Entry flow | LandingScreen → EpicSelectionScreen | Two worlds, not one app — user chooses epic before entering |
+| Epic split | Diagonal ClipPath (not PageView) | Both halves visible simultaneously — real choice, not scroll past footnote |
+| Mahabharata | Coming Soon screen with stanza text | Atmospheric, not a disabled feature — world being prepared |
+| No illustrations | CustomPainter silhouettes / atmospheric gradients | No external image assets, avoids cartoonish toy feel |

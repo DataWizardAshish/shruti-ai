@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 class ProgressService {
   static const _answeredKey = 'answered_question_ids';
@@ -6,6 +8,8 @@ class ProgressService {
   static const _lastActiveKey = 'last_active_date';
   static const _streakKey = 'streak_days';
   static const _onboardingKey = 'onboarding_complete';
+  static const _deviceIdKey = 'device_id';
+  static const _savedFavoritesKey = 'saved_favorites_json';
 
   final SharedPreferences _prefs;
 
@@ -14,6 +18,63 @@ class ProgressService {
   static Future<ProgressService> create() async {
     final prefs = await SharedPreferences.getInstance();
     return ProgressService(prefs);
+  }
+
+  // Device ID
+
+  // Saved favorites (local-only, no backend required)
+
+  bool isFavorite(int questionId) {
+    return (_prefs.getStringList(_savedFavoritesKey) ?? []).any((s) {
+      try {
+        return (jsonDecode(s)['id'] as num).toInt() == questionId;
+      } catch (_) {
+        return false;
+      }
+    });
+  }
+
+  Future<void> saveFavorite(Map<String, dynamic> questionJson) async {
+    final id = (questionJson['id'] as num).toInt();
+    if (isFavorite(id)) return;
+    final data = List<String>.from(
+        _prefs.getStringList(_savedFavoritesKey) ?? []);
+    data.add(jsonEncode(questionJson));
+    await _prefs.setStringList(_savedFavoritesKey, data);
+  }
+
+  Future<void> unsaveFavorite(int questionId) async {
+    final data = (_prefs.getStringList(_savedFavoritesKey) ?? []).where((s) {
+      try {
+        return (jsonDecode(s)['id'] as num).toInt() != questionId;
+      } catch (_) {
+        return true;
+      }
+    }).toList();
+    await _prefs.setStringList(_savedFavoritesKey, data);
+  }
+
+  List<Map<String, dynamic>> getSavedFavorites() {
+    return (_prefs.getStringList(_savedFavoritesKey) ?? [])
+        .map((s) {
+          try {
+            return jsonDecode(s) as Map<String, dynamic>?;
+          } catch (_) {
+            return null;
+          }
+        })
+        .whereType<Map<String, dynamic>>()
+        .toList();
+  }
+
+  // Device ID
+
+  Future<String> getOrCreateDeviceId() async {
+    final existing = _prefs.getString(_deviceIdKey);
+    if (existing != null) return existing;
+    final newId = const Uuid().v4();
+    await _prefs.setString(_deviceIdKey, newId);
+    return newId;
   }
 
   // Onboarding

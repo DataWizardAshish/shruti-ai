@@ -115,3 +115,59 @@ class AppTheme {
         labelLarge: GoogleFonts.inter(color: AppColors.charcoal, fontWeight: FontWeight.w600),
       );
 }
+
+class EpicTheme {
+  final String epicId;
+  final Color background;
+  final Color surface;
+  final Color primary;
+  final Color secondary;
+  final Color accent;
+  final Color textPrimary;
+  final Color textSecondary;
+  final Color correct;
+  final Color wrong;
+  final Color cardBorder;
+
+  const EpicTheme({
+    required this.epicId,
+    required this.background,
+    required this.surface,
+    required this.primary,
+    required this.secondary,
+    required this.accent,
+    required this.textPrimary,
+    required this.textSecondary,
+    required this.correct,
+    required this.wrong,
+    required this.cardBorder,
+  });
+
+  static const EpicTheme ramayana = EpicTheme(
+    epicId: 'ramayana',
+    background:    Color(0xFFF5E6C8),
+    surface:       Color(0xFFFDF3E3),
+    primary:       Color(0xFFE8821A),
+    secondary:     Color(0xFFC9A84C),
+    accent:        Color(0xFF8B1A1A),
+    textPrimary:   Color(0xFF2C1A0E),
+    textSecondary: Color(0xFFA0785A),
+    correct:       Color(0xFFC9A84C),
+    wrong:         Color(0xFFA0785A),
+    cardBorder:    Color(0xFFD4B896),
+  );
+
+  static const EpicTheme mahabharata = EpicTheme(
+    epicId: 'mahabharata',
+    background:    Color(0xFF1A1A2E),
+    surface:       Color(0xFF16213E),
+    primary:       Color(0xFFD4AF37),
+    secondary:     Color(0xFF4A7C9E),
+    accent:        Color(0xFF8B0000),
+    textPrimary:   Color(0xFFE8E0D0),
+    textSecondary: Color(0xFF9A8C7A),
+    correct:       Color(0xFFD4AF37),
+    wrong:         Color(0xFF8B0000),
+    cardBorder:    Color(0xFF2A3A5C),
+  );
+}
